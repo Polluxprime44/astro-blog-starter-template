@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SOAP Prime</title>
+<style>
+  :root{--bg:#f4f6fa;--card:#fff;--ink:#1b2430;--hd:#4472c4;--line:#cfd6e2}
+  @media(prefers-color-scheme:dark){:root{--bg:#141922;--card:#1d2431;--ink:#e6ebf3;--hd:#4472c4;--line:#33405a}}
+  *{box-sizing:border-box}
+  body{margin:0;font:15px/1.45 system-ui,Segoe UI,sans-serif;background:var(--bg);color:var(--ink)}
+  header{position:sticky;top:0;z-index:5;background:var(--hd);color:#fff;padding:10px 16px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  header h1{font-size:18px;margin:0 auto 0 0}
+  button{border:0;border-radius:6px;padding:7px 12px;font:inherit;cursor:pointer;background:#fff;color:#1b2430}
+  button:hover{filter:brightness(.92)}
+  main{max-width:900px;margin:16px auto;padding:0 16px;display:grid;gap:12px}
+  section{background:var(--card);border:1px solid var(--line);border-radius:8px;overflow:hidden}
+  section h2{margin:0;padding:8px 12px;font-size:14px;background:var(--hd);color:#fff;letter-spacing:.03em}
+  textarea{display:block;width:100%;min-height:90px;border:0;padding:10px 12px;font:inherit;color:inherit;background:transparent;resize:vertical;outline:none}
+  textarea:focus{background:rgba(68,114,196,.07)}
+  #final{white-space:pre-wrap;padding:12px;font-family:Consolas,monospace;font-size:13px}
+  @media print{header,.inputs{display:none}body{background:#fff;color:#000}}
+</style>
+</head>
+<body>
+<header>
+  <h1>SOAP Prime</h1>
+  <button onclick="copyNote()" id="copyBtn">Copy final note</button>
+  <button onclick="window.print()">Print</button>
+  <button onclick="clearAll()">Clear all</button>
+</header>
+<main>
+  <div class="inputs" id="inputs" style="display:grid;gap:12px"></div>
+  <section><h2>FINAL NOTE</h2><div id="final"></div></section>
+</main>
+<script>
+const S=[["ONE-LINER","ONE-LINER"],["SUBJECTIVE - HPI","S_HPI"],["SUBJECTIVE - PMH","S_PMH"],["SUBJECTIVE - MEDS","S_MEDS"],["SUBJECTIVE - ALLERGIES","S_ALLERG"],["SUBJECTIVE - SOCIAL","S_SOCIAL"],["SUBJECTIVE - FAMILY","S_FAMILY"],["SUBJECTIVE - ROS","S_ROS"],["OBJECTIVE - VITALS","O_VITALS"],["OBJECTIVE - PHYSICAL EXAM","O_PHYS"],["OBJECTIVE - LABS","O_LABS"],["OBJECTIVE - IMAGING","O_IMG"],["ASSESSMENT/PLAN","ASSESS"]];
+const KEY="soap_prime_v1";
+let store={};
+try{store=JSON.parse(localStorage.getItem(KEY)||"{}")}catch(e){}
+const box=document.getElementById("inputs");
+S.forEach(([name,id])=>{
+  const sec=document.createElement("section");
+  sec.innerHTML=`<h2>${name}</h2><textarea id="${id}" placeholder="Enter patient data..."></textarea>`;
+  box.appendChild(sec);
+  const t=sec.querySelector("textarea");
+  t.value=store[id]||"";
+  t.addEventListener("input",()=>{store[id]=t.value;try{localStorage.setItem(KEY,JSON.stringify(store))}catch(e){}render()});
+});
+function noteText(){
+  return S.map(([n,id])=>`${n}\n${(store[id]||"").trim()}`).join("\n\n");
+}
+function render(){document.getElementById("final").textContent=noteText()}
+function copyNote(){
+  const b=document.getElementById("copyBtn"),txt=noteText();
+  const done=()=>{b.textContent="Copied!";setTimeout(()=>b.textContent="Copy final note",1200)};
+  if(navigator.clipboard&&window.isSecureContext){navigator.clipboard.writeText(txt).then(done,fallback)}else fallback();
+  function fallback(){const ta=document.createElement("textarea");ta.value=txt;document.body.appendChild(ta);ta.select();document.execCommand("copy");ta.remove();done()}
+}
+function clearAll(){
+  if(!confirm("Clear all fields?"))return;
+  store={};try{localStorage.removeItem(KEY)}catch(e){}
+  document.querySelectorAll("textarea").forEach(t=>t.value="");render();
+}
+render();
+</script>
+</body>
+</html>
